@@ -1,0 +1,43 @@
+# File: k8s/configmap.yaml
+# Configuration data for the application
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devops-app-config
+  namespace: devops
+  labels:
+    app: devops-app
+data:
+  environment: "production"
+  log-level: "INFO"
+  app-name: "DevOps Demo Application"
+  
+  # Application properties
+  application.properties: |
+    app.name=DevOps Demo Application
+    app.version=1.0.0
+    app.environment=production
+    logging.level=INFO
+    server.port=8080
+    
+    # Database config (example - not used in this simple app)
+    db.host=localhost
+    db.port=5432
+    db.name=devops_db
+    
+    # Metrics
+    metrics.enabled=true
+    metrics.port=9090
+
+---
+# Optional: Secret for sensitive data (like database passwords)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: devops-app-secrets
+  namespace: devops
+type: Opaque
+stringData:
+  db-password: "your-secret-password-here"
+  api-key: "your-api-key-here"
