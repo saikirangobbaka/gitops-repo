@@ -1,0 +1,43 @@
+# File: k8s/service.yaml
+# Service to expose the Deployment
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-app
+  namespace: devops
+  labels:
+    app: devops-app
+spec:
+  type: NodePort  # Changed from ClusterIP to NodePort for easy local access
+  selector:
+    app: devops-app
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+    nodePort: 30080  # You can access via: http://minikube-ip:30080
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+---
+# Optional: LoadBalancer service (for production-like setup)
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-app-lb
+  namespace: devops
+  labels:
+    app: devops-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: devops-app
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
