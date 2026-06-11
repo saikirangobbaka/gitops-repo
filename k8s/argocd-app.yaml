@@ -1,0 +1,82 @@
+# File: k8s/argocd-app.yaml (or create in separate repo)
+# This manifest tells ArgoCD what to deploy
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: devops-app
+  namespace: argocd  # ArgoCD controller namespace
+spec:
+  project: default
+  
+  # Source: Where manifests are located (your gitops-repo)
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/gitops-repo.git
+    targetRevision: main
+    path: k8s  # Path to manifests in the repo
+  
+  # Destination: Where to deploy (your Minikube cluster)
+  destination:
+    server: https://kubernetes.default.svc  # Minikube cluster
+    namespace: devops
+  
+  # Auto-sync settings
+  syncPolicy:
+    automated:
+      prune: true    # Delete resources not in Git
+      selfHeal: true # Overwrite manual changes
+    syncOptions:
+    - CreateNamespace=true  # Create namespace if it doesn't exist
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # Notification settings
+  info:
+  - name: GitHub
+    value: https://github.com/YOUR_USERNAME/gitops-repo
+  - name: Documentation
+    value: https://github.com/YOUR_USERNAME/gitops-repo/blob/main/README.md
+
+---
+# Optional: ServiceAccount for ArgoCD
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: devops
+  labels:
+    name: devops
+
+---
+# Optional: NetworkPolicy to restrict traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: devops-app-netpolicy
+  namespace: devops
+spec:
+  podSelector:
+    matchLabels:
+      app: devops-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: devops
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53  # DNS
+    - protocol: UDP
+      port: 53
